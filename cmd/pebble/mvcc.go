@@ -35,6 +35,8 @@ var mvccComparer = &db.Comparer{
 		return v
 	},
 
+	Equal: bytes.Equal,
+
 	Separator: func(dst, a, b []byte) []byte {
 		return append(dst, a...)
 	},
