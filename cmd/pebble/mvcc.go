@@ -32,6 +32,7 @@ var mvccComparer = &db.Comparer{
 			v <<= 8
 			v |= uint64(b)
 		}
+		v <<= uint(8 * (8 - n))
 		return v
 	},
 
