@@ -6,6 +6,7 @@ package db
 
 import (
 	"bytes"
+	"unsafe"
 )
 
 // TODO(tbg): introduce a FeasibleKey type to make things clearer.
@@ -105,6 +106,18 @@ type Comparer struct {
 	Name string
 }
 
+func fastAbbrevKey(key []byte) uint64 {
+	ptr := unsafe.Pointer(&key[0])
+	return reverseBytes(*(*uint64)(ptr))
+}
+
+func reverseBytes(in uint64) uint64 {
+	in = (in&0x00FF00FF00FF00FF)<<8 | (in&0xFF00FF00FF00FF00)>>8
+	in = (in&0x0000FFFF0000FFFF)<<16 | (in&0xFFFF0000FFFF0000)>>16
+	in = (in&0x00000000FFFFFFFF)<<32 | (in&0xFFFFFFFF00000000)>>32
+	return in
+}
+
 // DefaultComparer is the default implementation of the Comparer interface.
 // It uses the natural ordering, consistent with bytes.Compare.
 var DefaultComparer = &Comparer{
@@ -113,10 +126,10 @@ var DefaultComparer = &Comparer{
 
 	AbbreviatedKey: func(key []byte) uint64 {
 		var v uint64
-		n := 8
-		if n > len(key) {
-			n = len(key)
+		if len(key) >= 8 {
+			return fastAbbrevKey(key)
 		}
+		n := len(key)
 		for _, b := range key[:n] {
 			v <<= 8
 			v |= uint64(b)
